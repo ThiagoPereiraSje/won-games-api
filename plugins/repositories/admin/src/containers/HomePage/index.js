@@ -1,4 +1,5 @@
-import React, { memo } from 'react';
+import React, { memo, useState, useEffect } from 'react';
+import axios from 'axios';
 import { Header } from '@buffetjs/custom';
 import { Table } from '@buffetjs/core';
 import styled from 'styled-components';
@@ -18,34 +19,6 @@ const headers = [
   },
 ];
 
-const rows = [
-  {
-    name: 'landing-page',
-    description: 'Code to the sales landing page.',
-    html_url: 'https://github.com/React-Avancado/landing-page',
-  },
-  {
-    name: 'links-estudo',
-    description: 'Links interessantes sobre tudo abordado no curso.',
-    html_url: 'https://github.com/React-Avancado/links-estudo',
-  },
-  {
-    name: 'boilerplate',
-    description: 'Boilerplate to use in our React Avançado course.',
-    html_url: 'https://github.com/React-Avancado/boilerplate',
-  },
-  {
-    name: 'landing-page-api',
-    description: 'API made with Strapi to seed the data our NextJS Landing Page.',
-    html_url: 'https://github.com/React-Avancado/landing-page-api',
-  },
-  {
-    name: 'reactavancado-extension-pack',
-    description: 'A collection of extension that we use at ReactAvancado.com.br course.',
-    html_url: 'https://github.com/React-Avancado/reactavancado-extension-pack',
-  },
-];
-
 const Wrapper = styled.div`
   padding: 18px 30px;
 
@@ -55,6 +28,13 @@ const Wrapper = styled.div`
 `;
 
 const HomePage = () => {
+  const [rows, setRows] = useState([]);
+
+  useEffect(async () => {
+    const res = await axios.get('https://api.github.com/users/React-avancado/repos');
+    setRows(res.data);
+  }, [])
+
   return (
     <Wrapper>
       <Header
