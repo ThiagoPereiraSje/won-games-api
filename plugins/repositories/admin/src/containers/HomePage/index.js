@@ -31,8 +31,12 @@ const HomePage = () => {
   const [rows, setRows] = useState([]);
 
   useEffect(async () => {
-    const res = await axios.get('https://api.github.com/users/React-avancado/repos');
-    setRows(res.data);
+    try {
+      const res = await axios.get('https://api.github.com/users/React-avancado/repos');
+      setRows(res.data);
+    } catch (e) {
+      strapi.notification.error(`Github API error, ${e.message || e}`);
+    }
   }, [])
 
   return (
