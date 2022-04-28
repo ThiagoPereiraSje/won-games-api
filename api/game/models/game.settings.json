@@ -8,7 +8,7 @@
   "options": {
     "increments": true,
     "timestamps": true,
-    "draftAndPublish": true
+    "draftAndPublish": false
   },
   "pluginOptions": {},
   "attributes": {
@@ -42,12 +42,12 @@
     "rating": {
       "type": "enumeration",
       "enum": [
-        "free",
-        "pegi3",
-        "pegi7",
-        "pegi12",
-        "pegi16",
-        "pegi18"
+        "BR0",
+        "BR10",
+        "BR12",
+        "BR14",
+        "BR16",
+        "BR18"
       ],
       "required": true
     },
@@ -72,23 +72,23 @@
       "pluginOptions": {}
     },
     "categories": {
-      "collection": "category",
       "via": "games",
+      "collection": "category",
       "dominant": true
     },
     "developers": {
-      "collection": "developer",
       "via": "games",
+      "collection": "developer",
       "dominant": true
     },
     "platforms": {
-      "collection": "platform",
       "via": "games",
+      "collection": "platform",
       "dominant": true
     },
     "publisher": {
-      "model": "publisher",
-      "via": "games"
+      "via": "games",
+      "model": "publisher"
     }
   }
 }
