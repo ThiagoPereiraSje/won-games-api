@@ -81,6 +81,31 @@ async function getGameInfo(slug) {
   }
 }
 
+async function setImage({ image, game, field = "cover" }) {
+  const url = `https:${image}_bg_crop_1680x655.jpg`;
+  const { data } = await axios.get(url, { responseType: "arraybuffer" });
+  const buffer = Buffer.from(data, "base64");
+
+  const FormData = require("form-data");
+  const formData = new FormData();
+
+  formData.append("refId", game.id);
+  formData.append("ref", "game");
+  formData.append("field", field);
+  formData.append("files", buffer, { filename: `${game.slug}.jpg` });
+
+  console.info(`Uploading ${field} image: ${game.slug}.jpg`);
+
+  await axios({
+    method: "POST",
+    url: `http://${strapi.config.host}:${strapi.config.port}/upload`,
+    data: formData,
+    headers: {
+      "Content-Type": `multipart/form-data; boundary=${formData._boundary}`,
+    },
+  });
+}
+
 async function createGames(products = []) {
   await Promise.all(
     products.map(async product => {
@@ -101,7 +126,7 @@ async function createGames(products = []) {
         const publisher = await getByName(product.publisher, 'publisher');
         const gameInfo = await getGameInfo(product.slug);
 
-        const game = {
+        const game = await strapi.services.game.create({
           name: product.title,
           slug: product.slug.replace(/_/g, '-'),
           price: product.price.amount,
@@ -111,11 +136,11 @@ async function createGames(products = []) {
           developers,
           publisher,
           ...gameInfo,
-        };
+        });
 
-        const saved = await strapi.services.game.create(game);
+        await setImage({ image: product.image, game });
 
-        return saved;
+        return game;
       }
     })
   );
@@ -129,7 +154,7 @@ module.exports = {
 
     // console.log(products[0]);
 
-    const qtdGames = 26;
+    const qtdGames = 6;
     await createManyToManyData(products.slice(0, qtdGames));
     await createGames(products.slice(0, qtdGames));
 
