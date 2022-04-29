@@ -8,7 +8,9 @@
 const axios = require("axios");
 const slugify = require("slugify");
 
-const slugMask = /^[A-Za-z0-9-_.~]*$/g;
+function Exception(e) {
+  return { e, data: e.data && e.data.errors && e.data.errors };
+}
 
 async function getByName(name, entityName) {
   const item = await strapi.services[entityName].find({ name });
@@ -21,7 +23,7 @@ async function create(name, entityName) {
   if (!item) {
     return await strapi.services[entityName].create({
       name,
-      slug: slugify(name, { lower: true }).match(slugMask).join(),
+      slug: slugify(name, { lower: true }),
     });
   }
 }
@@ -67,17 +69,21 @@ async function createManyToManyData(products = []) {
 }
 
 async function getGameInfo(slug) {
-  const { JSDOM } = require("jsdom");
+  try {
+    const { JSDOM } = require("jsdom");
 
-  const body = await axios.get(`https://www.gog.com/en/game/${slug}`);
-  const dom = new JSDOM(body.data);
+    const body = await axios.get(`https://www.gog.com/en/game/${slug}`);
+    const dom = new JSDOM(body.data);
 
-  const description = dom.window.document.querySelector('.description');
+    const description = dom.window.document.querySelector('.description');
 
-  return {
-    rating: 'BR0',
-    short_description: description.textContent.slice(0, 160),
-    description: description.innerHTML,
+    return {
+      rating: 'BR0',
+      short_description: description.textContent.slice(0, 160),
+      description: description.innerHTML,
+    }
+  } catch (e) {
+    console.log("GetGameInfo ", Exception(e));
   }
 }
 
@@ -86,28 +92,32 @@ function timeout(ms) {
 }
 
 async function setImage({ image, game, field = "cover" }) {
-  const url = `https:${image}_bg_crop_1680x655.jpg`;
-  const { data } = await axios.get(url, { responseType: "arraybuffer" });
-  const buffer = Buffer.from(data, "base64");
+  try {
+    const url = `https:${image}_bg_crop_1680x655.jpg`;
+    const { data } = await axios.get(url, { responseType: "arraybuffer" });
+    const buffer = Buffer.from(data, "base64");
 
-  const FormData = require("form-data");
-  const formData = new FormData();
+    const FormData = require("form-data");
+    const formData = new FormData();
 
-  formData.append("refId", game.id);
-  formData.append("ref", "game");
-  formData.append("field", field);
-  formData.append("files", buffer, { filename: `${game.slug}.jpg` });
+    formData.append("refId", game.id);
+    formData.append("ref", "game");
+    formData.append("field", field);
+    formData.append("files", buffer, { filename: `${game.slug}.jpg` });
 
-  console.info(`Uploading ${field} image: ${game.slug}.jpg`);
+    console.info(`Uploading ${field} image: ${game.slug}.jpg`);
 
-  await axios({
-    method: "POST",
-    url: `http://${strapi.config.host}:${strapi.config.port}/upload`,
-    data: formData,
-    headers: {
-      "Content-Type": `multipart/form-data; boundary=${formData._boundary}`,
-    },
-  });
+    await axios({
+      method: "POST",
+      url: `http://${strapi.config.host}:${strapi.config.port}/upload`,
+      data: formData,
+      headers: {
+        "Content-Type": `multipart/form-data; boundary=${formData._boundary}`,
+      },
+    });
+  } catch (e) {
+    console.log("SetImage ", Exception(e));
+  }
 }
 
 async function createGames(products = []) {
@@ -162,21 +172,14 @@ async function createGames(products = []) {
 
 module.exports = {
   populate: async (params) => {
-    const gogAPIURL = 'https://www.gog.com/games/ajax/filtered?mediaType=game&page=1&sort=popularity'
+    try {
+      const gogAPIURL = 'https://www.gog.com/games/ajax/filtered?mediaType=game&page=1&sort=popularity';
+      const { data: { products } } = await axios.get(gogAPIURL);
 
-    const { data: { products } } = await axios.get(gogAPIURL);
-
-    // console.log(products[0]);
-
-    const qtdGames = 6;
-    await createManyToManyData(products.slice(0, qtdGames));
-    await createGames(products.slice(0, qtdGames));
-
-    // console.log(await getByName(products[0].publisher, 'publisher'));
-    // await create(products[1].publisher, 'publisher');
-    // await create(products[1].developer, 'developer');
-
-    // console.log(await getGameInfo(products[0].slug));
-
+      await createManyToManyData(products);
+      await createGames(products);
+    } catch (e) {
+      console.log("Populate ", Exception(e));
+    }
   }
 };
