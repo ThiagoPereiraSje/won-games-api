@@ -18,14 +18,18 @@ async function getByName(name, entityName) {
   return item.length ? item[0] : null;
 }
 
-async function create(name, entityName) {
-  const item = await getByName(name, entityName);
+async function createEntity(name, entityName) {
+  try {
+    const item = await getByName(name, entityName);
 
-  if (!item) {
-    return await strapi.services[entityName].create({
-      name,
-      slug: slugify(name, { lower: true }),
-    });
+    if (!item) {
+      return await strapi.services[entityName].create({
+        name,
+        slug: slugify(name, { lower: true }),
+      });
+    }
+  } catch (e) {
+    console.log("Create Entity ", Exception(e));
   }
 }
 
@@ -53,16 +57,16 @@ async function createManyToManyData(products = []) {
   // Is the same as pushing a series of promises
   const promises = [
     // Destruct an array of promises to create a developer
-    ...Object.keys(developers).map(name => create(name, 'developer')),
+    ...Object.keys(developers).map(name => createEntity(name, 'developer')),
 
     // Destruct an array of promises to create a publisher
-    ...Object.keys(publishers).map(name => create(name, 'publisher')),
+    ...Object.keys(publishers).map(name => createEntity(name, 'publisher')),
 
     // Destruct an array of promises to create a category
-    ...Object.keys(categories).map(name => create(name, 'category')),
+    ...Object.keys(categories).map(name => createEntity(name, 'category')),
 
     // Destruct an array of promises to create a platform
-    ...Object.keys(platforms).map(name => create(name, 'platform')),
+    ...Object.keys(platforms).map(name => createEntity(name, 'platform')),
   ];
 
   // Solve all promises at one turn
