@@ -39,6 +39,46 @@ async function create(name, entityName) {
   }
 }
 
+async function createManyToManyData(products = []) {
+  const developers = {};
+  const publishers = {};
+  const categories = {};
+  const platforms = {};
+
+  products.forEach(product => {
+    const { developer, publisher, genres, supportedOperatingSystems } = product;
+
+    genres && genres.forEach(genre => {
+      categories[genre] = true;
+    })
+
+    supportedOperatingSystems && supportedOperatingSystems.forEach(so => {
+      platforms[so] = true;
+    })
+
+    developers[developer] = true;
+    publishers[publisher] = true;
+  })
+
+  // Is the same as pushing a series of promises
+  const promises = [
+    // Destruct an array of promises to create a developer
+    ...Object.keys(developers).map(name => create(name, 'developer')),
+
+    // Destruct an array of promises to create a publisher
+    ...Object.keys(publishers).map(name => create(name, 'publisher')),
+
+    // Destruct an array of promises to create a category
+    ...Object.keys(categories).map(name => create(name, 'category')),
+
+    // Destruct an array of promises to create a platform
+    ...Object.keys(platforms).map(name => create(name, 'platform')),
+  ];
+
+  // Solve all promises at one turn
+  return Promise.all(promises);
+}
+
 module.exports = {
   populate: async (params) => {
     const gogAPIURL = 'https://www.gog.com/games/ajax/filtered?mediaType=game&page=1&sort=popularity'
@@ -47,10 +87,11 @@ module.exports = {
 
     console.log(products[0]);
 
-    // console.log(await getByName(products[0].publisher, 'publisher'));
+    await createManyToManyData(products);
 
-    await create(products[1].publisher, 'publisher');
-    await create(products[1].developer, 'developer');
+    // console.log(await getByName(products[0].publisher, 'publisher'));
+    // await create(products[1].publisher, 'publisher');
+    // await create(products[1].developer, 'developer');
 
     // console.log(await getGameInfo(products[0].slug));
 
