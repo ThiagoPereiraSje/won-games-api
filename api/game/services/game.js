@@ -81,6 +81,10 @@ async function getGameInfo(slug) {
   }
 }
 
+function timeout(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 async function setImage({ image, game, field = "cover" }) {
   const url = `https:${image}_bg_crop_1680x655.jpg`;
   const { data } = await axios.get(url, { responseType: "arraybuffer" });
@@ -138,7 +142,17 @@ async function createGames(products = []) {
           ...gameInfo,
         });
 
+        // Upload of cover image
         await setImage({ image: product.image, game });
+
+        // Upload of gallery images
+        await Promise.all(
+          product.gallery
+            .slice(0, 5)
+            .map(url => setImage({ image: url, game, field: "gallery" }))
+        );
+
+        await timeout(2000); // wait 2s
 
         return game;
       }
